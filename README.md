@@ -61,6 +61,3 @@ El Cliente:
 Tendremos la opción de ingresar los datos para establecer conexión con el servidor.
 Una vez establecidas la conexión se tendrá la opción de enviar archivos al servidor para guárdalos en su carpeta asociada.
 También se podrá recibir archivos que se encuentren guardados en la carpeta asociada en el servidor.
-
-Clases Utilizadas
--Usuario (String nombreUsuario, String contrasenna)
