@@ -71,6 +71,7 @@ public class Server {
                 boolean recibir=false;
                 Usuario u =new Usuario();
                 UsuarioData ud = new UsuarioData();
+                String archivosUsuario = "";
                 
                 while ((inputLine = in.readLine()) != null ) {
                     //validar sesion
@@ -83,7 +84,7 @@ public class Server {
                         if(recibido.getContrasenna()!= null && recibido.getContrasenna().equals(u.getContrasenna())){
                             out.println("Correcto");
                             ManejoArchivos ma = new ManejoArchivos();
-                            String archivosUsuario = ma.ObtenerArchivos(u.getNombreUsuario());
+                            archivosUsuario = ma.ObtenerArchivos(u.getNombreUsuario());
                             out.println(archivosUsuario);
                             System.out.println("El usuario "+u.getNombreUsuario()+" esta conectado");
                         }else{
@@ -101,11 +102,9 @@ public class Server {
                    //recibo archivo del cliente
                    if(recibir){
                         nombreArchivo = inputLine;
-                        recibir = recibirArchivo(u.getNombreUsuario(),nombreArchivo);
-                        ManejoArchivos ma = new ManejoArchivos();
-                        String archivosUsuario = ma.ObtenerArchivos(u.getNombreUsuario());
+                        archivosUsuario=archivosUsuario+"!--!"+nombreArchivo;
                         out.println(archivosUsuario);
-
+                        recibir = recibirArchivo(u.getNombreUsuario(),nombreArchivo);
                    }
                    
                    //Si el msj del cliente=Enviar, significa que voy a recibir algo
