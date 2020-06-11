@@ -1,0 +1,171 @@
+CREATE DATABASE tareaeconomia
+
+CREATE TABLE cuenta (id integer, nombre varchar(100));
+ALTER TABLE cuenta ADD COLUMN tipo varchar(50)
+
+CREATE TABLE asiento (num_asiento integer, estado varchar(50), cantidad integer, descripcion varchar(100), tipo_cuenta integer, CONSTRAINT pk_cuenta FOREIGN KEY (tipo_cuenta) REFERENCES cuenta(id), fecha varchar(50))
+
+
+--SP--
+CREATE PROCEDURE sp_insertarAsiento(IN numero integer, IN fecha VARCHAR(50), IN tipo integer, IN estado VARCHAR(50), IN monto integer, IN descripcion VARCHAR(100))
+INSERT INTO asiento (num_asiento ,estado ,cantidad ,descripcion ,tipo_cuenta ,fecha) VALUES (numero, estado, monto, descripcion, tipo, fecha)
+
+CREATE PROCEDURE sp_obtenerCuenta()
+SELECT id, nombre FROM cuenta
+
+DELIMITER $$
+CREATE PROCEDURE sp_obtenerDistCuentasAsientos()
+BEGIN
+DELETE from mayor;
+SELECT DISTINCT c.nombre from asiento a join cuenta c where a.tipo_cuenta = c.id;
+END $$
+DELIMITER;
+
+
+
+DELIMITER $$
+CREATE PROCEDURE sp_mayorizar(IN nombre varchar(100))
+BEGIN
+DECLARE cuenta integer DEFAULT 0;
+DECLARE tipoCuenta varchar(50);
+DECLARE monto integer DEFAULT 0;
+
+
+SELECT id into cuenta from cuenta c where nombre = c.nombre;
+select tipo into tipoCuenta from cuenta c where nombre = c.nombre;
+
+IF (tipoCuenta = 'activo' or tipoCuenta = 'gasto' or tipoCuenta = 'costo') THEN
+	IF EXISTS ((SELECT descripcion from asiento where tipo_cuenta = cuenta and estado = 'Haber')) THEN
+    	IF EXISTS (SELECT descripcion from asiento where tipo_cuenta = cuenta and estado = 'Debe') THEN
+        select (SELECT sum(cantidad) from asiento where tipo_cuenta = cuenta and estado = 'Debe') - (SELECT sum(cantidad) from asiento where tipo_cuenta = cuenta and estado = 'Haber') into monto;
+        INSERT into mayor values (nombre, monto);
+        ELSE
+        	SELECT sum(cantidad) into monto from asiento where tipo_cuenta = cuenta and estado = 'Haber';
+        	INSERT into mayor values (nombre, monto);
+        END IF;
+        
+    ELSE
+    	SELECT sum(cantidad) into monto from asiento where tipo_cuenta = cuenta and estado = 'Debe';
+        INSERT into mayor values (nombre, monto);
+    END IF;
+ELSE
+	IF (tipoCuenta = 'pasivo' OR tipoCuenta = 'patrimonio' OR tipoCuenta = 'ingreso') THEN
+    	IF EXISTS ((SELECT descripcion from asiento where tipo_cuenta = cuenta and estado = 'Debe')) THEN
+        	IF EXISTS (SELECT descripcion from asiento where tipo_cuenta = cuenta and estado = 'Haber') THEN
+            	select (SELECT sum(cantidad) from asiento where tipo_cuenta = cuenta and estado = 'Haber') - (SELECT sum(cantidad) from asiento where tipo_cuenta = cuenta and estado = 'Debe') into monto;
+            	INSERT into mayor values (nombre, monto);
+            ELSE
+            	SELECT sum(cantidad) into monto from asiento where tipo_cuenta = cuenta and estado = 'Debe';
+            	INSERT into mayor values (nombre, monto);
+            END IF;
+        ELSE
+        	SELECT sum(cantidad) into monto from asiento where tipo_cuenta = cuenta and estado = 'Haber';
+            INSERT into mayor values (nombre, monto);
+        
+        END if;
+        END IF;
+END if;
+END $$
+DELIMITER;
+
+create procedure sp_obtenerMayorizacion()
+select * from mayor
+
+
+DELIMITER $$
+create procedure sp_limpiar()
+BEGIN
+DELETE FROM asiento;
+DELETE FROM mayor;
+END $$
+DELIMITER;
+
+CREATE TABLE mayor (nombre varchar(100), monto varchar(100), CONSTRAINT pk_nombre FOREIGN KEY (nombre) REFERENCES cuenta(nombre))
+
+create procedure sp_obtenerActivo()
+select * from mayor m
+	JOIN cuenta c
+    	On m.nombre = c.nombre
+        	WHERE c.tipo = 'activo' OR c.tipo='gasto' OR c.tipo='costo'
+
+create procedure sp_obtenerPasivo()
+select * from mayor m
+	JOIN cuenta c
+    	On m.nombre = c.nombre
+        	WHERE c.tipo = 'pasivo' OR c.tipo = 'ingreso';
+
+create procedure sp_obtenerPatrimonio()
+select * from mayor m
+	JOIN cuenta c
+    	On m.nombre = c.nombre
+        	WHERE c.tipo = 'patrimonio';
+
+create procedure sp_obtenerIngreso()
+select * from mayor m
+	JOIN cuenta c
+    	On m.nombre = c.nombre
+        	WHERE c.tipo = 'ingreso';
+
+create procedure sp_obtenerCosto()
+select * from mayor m
+	JOIN cuenta c
+    	On m.nombre = c.nombre
+        	WHERE c.tipo = 'costo';
+
+create procedure sp_obtenerGasto()
+select * from mayor m
+	JOIN cuenta c
+    	On m.nombre = c.nombre
+        	WHERE c.tipo = 'gasto';
+
+
+INSERT INTO cuenta(id, nombre) VALUES 
+(1, 'Efectivo'),
+(2, 'Inversiones a corto plazo'), 
+(3, 'Cuentas por cobrar'), 
+(4, 'Documentos por cobrar corto plazo'),
+(5, 'Inventario de mercaderias'), 
+(6, 'Seguros pagados por adelantado'), 
+(7, 'Alquileres pagados por adelantado'),
+(8, 'Intereses acumulados por cobrar'),
+(9, 'Terreno'), 
+(10, 'Edificio'), 
+(11, 'Depreciacion acumulada edificio'), 
+(12, 'Mobiliario y equipo oficina'),
+(13, 'Depreciacion acumulada mobiliario y equipo oficina'), 
+(14, 'Vehiculos'), 
+(15, 'Depreciacion acumulada vehiculos'),
+(16, 'Documentos a cobrar largo plazo'), 
+(17, 'Patentes'), 
+(18, 'Depositos de garantias'),
+(19, 'Cuentas por pagar'), 
+(20, 'Documentos por pagar corto plazo'), 
+(21, 'Sueldos por pagar'), 
+(22, 'Intereses acumulados por pagar'),
+(23, 'Dividendos Por Pagar'),
+(24, 'Impuesto Renta Por Pagar'),
+(25, 'Ventas o Ingresos Diferidos o Cobrados Por Adelantado'),
+(26, 'Documentos Por Pagar Largo Plazo')
+,(27, 'Hipoteca Por Pagar')
+,(28, 'Prestaciones Legales')
+,(29,'Capital Acciones')
+,(30, 'Utilidades No Distribuidas')
+,(31, 'Ingreso Por Ventas')
+,(32, 'Ingreso Mantenimiento')
+,(33, 'Ingreso Por Servicios')
+,(34, 'Ingreso Intereses')
+,(35, 'Costo Mercaderia Vendida')
+,(36, 'Gastos Sueldos')
+,(37, 'Gastos Publicidad')
+,(38, 'Gastos Depreciacion Edificio')
+,(39, 'Gastos Depreciacion Mobiliario y Equipo')
+,(40, 'Gastos Alquileres')
+,(41, 'Gastos Servicios Varios')
+,(42, 'Gastos Intereses')
+
+UPDATE cuenta SET tipo='activo' WHERE id<19;
+UPDATE cuenta SET tipo='pasivo' WHERE id>18 and id<29 ;
+UPDATE cuenta SET tipo='patrimonio' WHERE id>28 and id<31 ;
+UPDATE cuenta SET tipo='ingreso' WHERE id>30 and id<35 ;
+UPDATE cuenta SET tipo='costo' WHERE id=35;
+UPDATE cuenta SET tipo='gasto' WHERE id>35;
